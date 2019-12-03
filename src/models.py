@@ -31,6 +31,18 @@ class ContentBasedFiltering:
         return self.__meta_df
 
     @property
+    def movieId_to_index(self):
+        return self.__movieId_to_index
+
+    @property
+    def movieId_to_title(self):
+        return self.__movieId_to_title
+    
+    @property
+    def index_to_movieId(self):
+        return self.__index_to_movieId
+        
+    @property
     def tfidf(self):
         return self.__tfidf
 
@@ -110,9 +122,7 @@ class ContentBasedFiltering:
 
         index = self.__movieId_to_index[movie_id]
         sim = self.__cosine_sim[index] + self.__jaccard_sim[index]
-        sim = np.argsort(-sim)[:topk]
-        sim = [self.__index_to_movieId[i] for i in sim]
-        print(f"Recommend for {self.__movieId_to_title[movie_id]}:")
-        print(f"{[self.__movieId_to_title[i] for i in sim]}")
+        sim = np.argsort(-sim)[1:topk+1]
+        sim = [str(self.__index_to_movieId[i]) for i in sim]
         return sim
 
