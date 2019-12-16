@@ -4,11 +4,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 from tqdm import tqdm
 from utils import Jaccard, nlp
+from consts import JACCARD_SIM
 
-class ContentBasedFiltering:
-    def __init__(self, meta_file):
-        assert isinstance(meta_file, str)
-        assert meta_file.endswith("parquet")
 
 class ContentBasedFiltering:
     def __init__(self, meta_df):
@@ -45,11 +42,11 @@ class ContentBasedFiltering:
     @property
     def movieId_to_title(self):
         return self.__movieId_to_title
-    
+
     @property
     def index_to_movieId(self):
         return self.__index_to_movieId
-        
+
     @property
     def tfidf(self):
         return self.__tfidf
@@ -70,9 +67,7 @@ class ContentBasedFiltering:
         """
         Compute cosine similarity based on movie description, including overview and tagline.
         """
-        if self.cosine_sim is not None:
-            return None
-        else:
+        if self.cosine_sim is None:
             self.__meta_df["description"] = (
                 self.__meta_df["overview"] + " " + self.__meta_df["tagline"]
             )
@@ -80,10 +75,12 @@ class ContentBasedFiltering:
                 :, "description"
             ].apply(nlp)
             # tfidf matrix where row represents each movie and column represents words
-            self.__tfidf_matrix = self.__tfidf.fit_transform(self.__meta_df["description"])
+            self.__tfidf_matrix = self.__tfidf.fit_transform(
+                self.__meta_df["description"]
+            )
             self.__cosine_sim = linear_kernel(self.__tfidf_matrix)
 
-    def compute_jaccard_similarity(self, fname="JACCARD_SIM.npz"):
+    def compute_jaccard_similarity(self, fname=JACCARD_SIM):
         """
         Compute jaccard similarity based on movie meta data, including cast, keywords, genres, director
 
@@ -100,7 +97,9 @@ class ContentBasedFiltering:
                     + self.meta_df["genres"]
                     + self.meta_df["director"]
                 )
-                jaccard_sim = np.zeros((len(self.meta_df.index), len(self.meta_df.index)))
+                jaccard_sim = np.zeros(
+                    (len(self.meta_df.index), len(self.meta_df.index))
+                )
                 for i1 in tqdm(range(len(self.meta_df.index))):
                     for i2 in range(i1 + 1, len(self.meta_df.index)):
                         s1 = set(self.meta_dfa_new.items_for_jaccard[i1])
