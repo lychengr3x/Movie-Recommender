@@ -4,15 +4,17 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 from tqdm import tqdm
 from utils import Jaccard, nlp
+from consts import JACCARD_SIM
+
 
 class ContentBasedFiltering:
-    def __init__(self, meta_file):
-        assert isinstance(meta_file, str)
-        assert meta_file.endswith("parquet")
-
-        self.__meta_df = pd.read_parquet(meta_file, engine="fastparquet").reset_index(
-            drop=True
-        )
+    def __init__(self, meta_df):
+        """
+        Args:
+            meta_df (pd.DataFrame): 
+        """
+        assert isinstance(meta_df, type(pd.DataFrame()))
+        self.__meta_df = meta_df.reset_index(drop=True)
         self.__movieId_to_index = (
             self.__meta_df["movieId"].reset_index().set_index("movieId").squeeze()
         )
@@ -21,7 +23,10 @@ class ContentBasedFiltering:
         )
         self.__index_to_movieId = self.meta_df["movieId"]
 
-        self.__tfidf = TfidfVectorizer(analyzer="word", stop_words="english", ngram_range=(1,3))
+        # from uni-gram to tri-gram
+        self.__tfidf = TfidfVectorizer(
+            analyzer="word", stop_words="english", ngram_range=(1, 3)
+        )
         self.__tfidf_matrix = None
         self.__cosine_sim = None
         self.__jaccard_sim = None
@@ -29,6 +34,18 @@ class ContentBasedFiltering:
     @property
     def meta_df(self):
         return self.__meta_df
+
+    @property
+    def movieId_to_index(self):
+        return self.__movieId_to_index
+
+    @property
+    def movieId_to_title(self):
+        return self.__movieId_to_title
+
+    @property
+    def index_to_movieId(self):
+        return self.__index_to_movieId
 
     @property
     def tfidf(self):
@@ -50,9 +67,7 @@ class ContentBasedFiltering:
         """
         Compute cosine similarity based on movie description, including overview and tagline.
         """
-        if self.cosine_sim is not None:
-            return None
-        else:
+        if self.cosine_sim is None:
             self.__meta_df["description"] = (
                 self.__meta_df["overview"] + " " + self.__meta_df["tagline"]
             )
@@ -60,10 +75,12 @@ class ContentBasedFiltering:
                 :, "description"
             ].apply(nlp)
             # tfidf matrix where row represents each movie and column represents words
-            self.__tfidf_matrix = self.__tfidf.fit_transform(self.__meta_df["description"])
+            self.__tfidf_matrix = self.__tfidf.fit_transform(
+                self.__meta_df["description"]
+            )
             self.__cosine_sim = linear_kernel(self.__tfidf_matrix)
 
-    def compute_jaccard_similarity(self, fname="JACCARD_SIM.npz"):
+    def compute_jaccard_similarity(self, fname=JACCARD_SIM):
         """
         Compute jaccard similarity based on movie meta data, including cast, keywords, genres, director
 
@@ -80,7 +97,9 @@ class ContentBasedFiltering:
                     + self.meta_df["genres"]
                     + self.meta_df["director"]
                 )
-                jaccard_sim = np.zeros((len(self.meta_df.index), len(self.meta_df.index)))
+                jaccard_sim = np.zeros(
+                    (len(self.meta_df.index), len(self.meta_df.index))
+                )
                 for i1 in tqdm(range(len(self.meta_df.index))):
                     for i2 in range(i1 + 1, len(self.meta_df.index)):
                         s1 = set(self.meta_dfa_new.items_for_jaccard[i1])
@@ -99,9 +118,13 @@ class ContentBasedFiltering:
                 # require large memory
                 self.__jaccard_sim = np.load(fname)["arr_0"]  # shape: (45116, 45116)
 
-    def recommend(self, movie_id, topk=30):
+    def recommend(self, movie_id, topk=40):
         """
         Recommend movie based on `movie_id`
+
+        Args: 
+            movie_id (int)
+            topk (int): recommend top-k similar movies
         """
         assert isinstance(movie_id, int)
         assert isinstance(topk, int)
@@ -110,9 +133,7 @@ class ContentBasedFiltering:
 
         index = self.__movieId_to_index[movie_id]
         sim = self.__cosine_sim[index] + self.__jaccard_sim[index]
-        sim = np.argsort(-sim)[:topk]
-        sim = [self.__index_to_movieId[i] for i in sim]
-        print(f"Recommend for {self.__movieId_to_title[movie_id]}:")
-        print(f"{[self.__movieId_to_title[i] for i in sim]}")
+        sim = np.argsort(-sim)[1 : topk + 1]  # skip the first one
+        sim = [str(self.__index_to_movieId[i]) for i in sim]
         return sim
 

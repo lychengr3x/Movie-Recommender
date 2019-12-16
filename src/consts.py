@@ -11,5 +11,9 @@ except:
     nltk.download("stopwords")
     STOPWORDS = stopwords.words("english")
 
-TRAIN_SET = "../data/train.csv"
-VALID_SET = "../data/valid.csv"
+RATING_CSV = "../data/ratings.csv"
+META_DATA_PARQUET = "../data/processed_data.parquet"
+TRAIN_SET_PARQUET = "../data/rating_train.parquet"
+VALIDATION_SET_PARQUET = "../data/rating_valid.parquet"
+TEST_SET_PARQUET = "../data/rating_test.parquet"
+JACCARD_SIM = "../data/JACCARD_SIM.npz"
