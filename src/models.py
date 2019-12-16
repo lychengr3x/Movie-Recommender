@@ -111,9 +111,13 @@ class ContentBasedFiltering:
                 # require large memory
                 self.__jaccard_sim = np.load(fname)["arr_0"]  # shape: (45116, 45116)
 
-    def recommend(self, movie_id, topk=30):
+    def recommend(self, movie_id, topk=40):
         """
         Recommend movie based on `movie_id`
+
+        Args: 
+            movie_id (int)
+            topk (int): recommend top-k similar movies
         """
         assert isinstance(movie_id, int)
         assert isinstance(topk, int)
@@ -122,7 +126,7 @@ class ContentBasedFiltering:
 
         index = self.__movieId_to_index[movie_id]
         sim = self.__cosine_sim[index] + self.__jaccard_sim[index]
-        sim = np.argsort(-sim)[1:topk+1]
+        sim = np.argsort(-sim)[1 : topk + 1]  # skip the first one
         sim = [str(self.__index_to_movieId[i]) for i in sim]
         return sim
 
