@@ -10,9 +10,14 @@ class ContentBasedFiltering:
         assert isinstance(meta_file, str)
         assert meta_file.endswith("parquet")
 
-        self.__meta_df = pd.read_parquet(meta_file, engine="fastparquet").reset_index(
-            drop=True
-        )
+class ContentBasedFiltering:
+    def __init__(self, meta_df):
+        """
+        Args:
+            meta_df (pd.DataFrame): 
+        """
+        assert isinstance(meta_df, type(pd.DataFrame()))
+        self.__meta_df = meta_df.reset_index(drop=True)
         self.__movieId_to_index = (
             self.__meta_df["movieId"].reset_index().set_index("movieId").squeeze()
         )
@@ -21,7 +26,10 @@ class ContentBasedFiltering:
         )
         self.__index_to_movieId = self.meta_df["movieId"]
 
-        self.__tfidf = TfidfVectorizer(analyzer="word", stop_words="english", ngram_range=(1,3))
+        # from uni-gram to tri-gram
+        self.__tfidf = TfidfVectorizer(
+            analyzer="word", stop_words="english", ngram_range=(1, 3)
+        )
         self.__tfidf_matrix = None
         self.__cosine_sim = None
         self.__jaccard_sim = None
