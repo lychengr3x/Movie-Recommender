@@ -34,10 +34,20 @@ def nlp(x):
     return " ".join(SNOWBALLSTEMMER.stem(w) for w in words)
 
 
-def count_recall_at(user, prediction, k):
+def recall_at_k(user, prediction, k, items_per_user):
+    """
+    Compute recall at k.
+
+    Note: data type of items in prediction should be the same as those in items_per_user.
+    In my pre-processed data, they are string format.
+    """
+    assert isinstance(user, str)
+    assert isinstance(prediction, list)
+    assert isinstance(k, int)
+    assert isinstance(items_per_user, dict)
     top_partition = prediction[:k]
     try:
-        watched = movies_per_user.get(user)
+        watched = items_per_user.get(user)
         return sum([m in watched for m in top_partition]) / k
     except:
         return 0
