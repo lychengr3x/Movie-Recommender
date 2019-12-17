@@ -12,7 +12,7 @@ except:
     STOPWORDS = stopwords.words("english")
 
 RATING_CSV = "../data/ratings.csv"
-META_DATA_PARQUET = "../data/processed_data.parquet"
+META_DATA_PARQUET = "../data/processed_meta_data.parquet"
 TRAIN_SET_PARQUET = "../data/rating_train.parquet"
 VALIDATION_SET_PARQUET = "../data/rating_valid.parquet"
 TEST_SET_PARQUET = "../data/rating_test.parquet"
